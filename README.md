@@ -1,25 +1,30 @@
-# ssm
+# peek
 
-Interactive CLI to list and select running EC2 instances for AWS SSM Session Manager connections.
+Interactive CLI to browse running EC2 instances and start an AWS SSM Session Manager shell.
+
+## Prerequisites
+
+- AWS credentials configured (env vars, `~/.aws/credentials`, or IAM role)
+- [`session-manager-plugin`](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html) installed and in `PATH`
 
 ## Usage
 
 ```bash
-ssm --profile <aws-profile> --region <aws-region>
+peek [--profile <aws-profile>] [--region <aws-region>]
 ```
 
-Both flags are optional and fall back to the default AWS credential chain and configured region.
+Both flags are optional. `--profile` / `-p` accepts: `default`, `dev`, `staging`, `prod`.
 
 ## Install
 
 ```bash
-go install github.com/dalebandoni/ssm@latest
+go install github.com/db494/peek@latest
 ```
 
 Or build locally:
 
 ```bash
-go build -o ssm .
+go build -o peek .
 ```
 
 ## Navigation
@@ -27,7 +32,7 @@ go build -o ssm .
 | Key | Action |
 |-----|--------|
 | `↑` / `↓` | Move selection |
-| Type | Filter by name or instance ID |
-| `Enter` | Select instance |
+| `Enter` | Connect via SSM |
 | `q` / `Ctrl+C` | Quit |
 
+The table shows: **Name**, **Instance ID**, **Private IP**, **Type**, **OS**, **AMI**, **State**.
