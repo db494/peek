@@ -1,0 +1,17 @@
+# Binaries
+peek
+*.exe
+
+# Build output
+dist/
+
+# Environment
+.env
+.env.*
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
