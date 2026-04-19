@@ -13,48 +13,50 @@ import (
 )
 
 // Palette — all 256-color ANSI for broad terminal support.
+// Modern sleek dark UI palette
 var (
-	colorBlue     = lipgloss.Color("69")  // cornflower blue  — primary accent
-	colorSkyBlue  = lipgloss.Color("111") // light steel blue — header text
-	colorTeal     = lipgloss.Color("38")  // dark cyan        — border
-	colorLavender = lipgloss.Color("140") // lavender         — profile badge
-	colorGray     = lipgloss.Color("246") // medium gray      — help text
-	colorDim      = lipgloss.Color("240") // dark gray        — separators
-	colorDimmer   = lipgloss.Color("236") // very dark gray   — table border
-	colorSelBg    = lipgloss.Color("24")  // dark blue        — selected row bg
-	colorSelFg    = lipgloss.Color("255") // white            — selected row fg
+	colorPrimary = lipgloss.Color("81")  // bright cyan-blue     main accent
+	colorHeader  = lipgloss.Color("153") // soft ice blue        titles
+	colorBorder  = lipgloss.Color("60")  // muted slate blue     borders
+	colorBadge   = lipgloss.Color("141") // modern violet        badges
+	colorTextDim = lipgloss.Color("245") // soft gray            secondary text
+	colorMuted   = lipgloss.Color("239") // graphite             separators
+	colorDark    = lipgloss.Color("236") // dark surface         tables
+	colorSelBg   = lipgloss.Color("24")  // deep navy            selected bg
+	colorSelFg   = lipgloss.Color("255") // white                selected fg
 )
 
 // Chrome styles.
 var (
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(colorBlue)
+			Foreground(colorPrimary).
+			PaddingLeft(1)
 
 	countStyle = lipgloss.NewStyle().
-			Foreground(colorDim)
+			Foreground(colorTextDim)
 
 	tableWrapStyle = lipgloss.NewStyle().
 			BorderStyle(lipgloss.RoundedBorder()).
-			BorderForeground(colorTeal).
+			BorderForeground(colorBorder).
 			PaddingLeft(1).
 			PaddingRight(1).
 			MarginTop(1)
 
 	footerStyle = lipgloss.NewStyle().
-			Foreground(colorGray).
+			Foreground(colorTextDim).
 			MarginTop(1).
 			PaddingLeft(2)
 
 	keyStyle = lipgloss.NewStyle().
-			Foreground(colorBlue).
+			Foreground(colorPrimary).
 			Bold(true)
 
 	sepStyle = lipgloss.NewStyle().
-			Foreground(colorDimmer)
+			Foreground(colorMuted)
 
 	profileBadgeStyle = lipgloss.NewStyle().
-				Foreground(colorLavender).
+				Foreground(colorBadge).
 				Bold(true)
 )
 
@@ -155,9 +157,9 @@ func buildTable(instances []ec2inst.Instance) table.Model {
 
 	s.Header = s.Header.
 		BorderStyle(lipgloss.ThickBorder()).
-		BorderForeground(colorDimmer).
+		BorderForeground(colorDark).
 		BorderBottom(true).
-		Foreground(colorSkyBlue).
+		Foreground(colorHeader).
 		Bold(true)
 
 	selected := s.Selected.
