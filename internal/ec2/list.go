@@ -18,22 +18,28 @@ type Instance struct {
 	State     string
 }
 
+type instancePager interface {
+	HasMorePages() bool
+	NextPage(context.Context, ...func(*ec2.Options)) (*ec2.DescribeInstancesOutput, error)
+}
+
 func List(ctx context.Context, cfg aws.Config) ([]Instance, error) {
 	client := ec2.NewFromConfig(cfg)
-
-	input := &ec2.DescribeInstancesInput{
+	pager := ec2.NewDescribeInstancesPaginator(client, &ec2.DescribeInstancesInput{
 		Filters: []types.Filter{
 			{
 				Name:   aws.String("instance-state-name"),
 				Values: []string{"pending", "running", "shutting-down", "stopping", "stopped"},
 			},
 		},
-	}
+	})
+	return listFromPager(ctx, pager)
+}
 
+func listFromPager(ctx context.Context, pager instancePager) ([]Instance, error) {
 	var instances []Instance
-	paginator := ec2.NewDescribeInstancesPaginator(client, input)
-	for paginator.HasMorePages() {
-		page, err := paginator.NextPage(ctx)
+	for pager.HasMorePages() {
+		page, err := pager.NextPage(ctx)
 		if err != nil {
 			return nil, err
 		}
