@@ -3,6 +3,7 @@ package tui
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/charmbracelet/bubbles/table"
@@ -18,7 +19,6 @@ var (
 	colorPrimary = lipgloss.Color("81")  // bright cyan-blue     main accent
 	colorHeader  = lipgloss.Color("153") // soft ice blue        titles
 	colorBorder  = lipgloss.Color("60")  // muted slate blue     borders
-	colorBadge   = lipgloss.Color("141") // modern violet        badges
 	colorTextDim = lipgloss.Color("245") // soft gray            secondary text
 	colorMuted   = lipgloss.Color("239") // graphite             separators
 	colorDark    = lipgloss.Color("236") // dark surface         tables
@@ -56,8 +56,11 @@ var (
 			Foreground(colorMuted)
 
 	profileBadgeStyle = lipgloss.NewStyle().
-				Foreground(colorBadge).
-				Bold(true)
+				Background(colorSelBg).
+				Foreground(colorPrimary).
+				Bold(true).
+				PaddingLeft(1).
+				PaddingRight(1)
 )
 
 type model struct {
@@ -106,28 +109,35 @@ func (m model) View() string {
 
 	sep := sepStyle.Render("  ·  ")
 
-	// Title row: "SSM Connect  ·  12 instances"
-	title := titleStyle.Render("peek 👀") +
-		sep +
-		countStyle.Render(fmt.Sprintf("%d instance(s)", len(m.instances)))
-
-	// Table wrapped in rounded border with padding.
-	tableView := tableWrapStyle.Render(m.table.View())
-
-	// Footer: key hints on left, profile badge on right.
 	p := m.profile
 	if p == "" {
 		p = "default"
 	}
+
+	// Table wrapped in rounded border with padding.
+	tableView := tableWrapStyle.Render(m.table.View())
+	tableWidth := lipgloss.Width(tableView)
+
+	// Header: title on left, profile badge on right, aligned to table width.
+	titleText := titleStyle.Render("peek 👀") +
+		sep +
+		countStyle.Render(fmt.Sprintf("%d instance(s)", len(m.instances)))
+	badge := profileBadgeStyle.Render(" " + p + " ")
+	gap := tableWidth - lipgloss.Width(titleText) - lipgloss.Width(badge)
+	if gap < 1 {
+		gap = 1
+	}
+	header := titleText + strings.Repeat(" ", gap) + badge
+
+	// Footer: key hints only.
 	keys := keyStyle.Render("↑↓") + " navigate" +
 		sep +
 		keyStyle.Render("enter") + " connect" +
 		sep +
 		keyStyle.Render("q") + " quit"
-	badge := "profile: " + profileBadgeStyle.Render(p)
-	footer := footerStyle.Render(keys + sep + badge)
+	footer := footerStyle.Render(keys)
 
-	return title + "\n" + tableView + "\n" + footer + "\n"
+	return header + "\n" + tableView + "\n" + footer + "\n"
 }
 
 func buildTable(instances []ec2inst.Instance) table.Model {
