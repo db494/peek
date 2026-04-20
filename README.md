@@ -13,7 +13,7 @@ Interactive CLI to browse running EC2 instances and start an AWS SSM Session Man
 peek [--profile <aws-profile>] [--region <aws-region>]
 ```
 
-Both flags are optional. `--profile` / `-p` accepts: `default`, `dev`, `staging`, `prod`.
+Both flags are optional. `--profile` / `-p` accepts any profile from `~/.aws/config` or `~/.aws/credentials`. Run `peek --list-profiles` to see available profiles.
 
 ## Install
 
