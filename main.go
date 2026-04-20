@@ -1,12 +1,17 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"slices"
+	"sort"
+	"strings"
 	"syscall"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -16,11 +21,62 @@ import (
 	"github.com/db494/peek/internal/tui"
 )
 
-var allowedProfiles = []string{
-	"default",
-	"dev",
-	"staging",
-	"prod",
+func loadAWSProfiles() ([]string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, fmt.Errorf("could not determine home directory: %w", err)
+	}
+
+	seen := map[string]struct{}{"default": {}}
+
+	parseINI := func(path string, prefixed bool) error {
+		f, err := os.Open(path)
+		if os.IsNotExist(err) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+
+		defer f.Close() //nolint:errcheck
+
+		scanner := bufio.NewScanner(f)
+		for scanner.Scan() {
+			line := strings.TrimSpace(scanner.Text())
+			if !strings.HasPrefix(line, "[") || !strings.HasSuffix(line, "]") {
+				continue
+			}
+			section := line[1 : len(line)-1]
+			if section == "default" {
+				continue
+			}
+			if prefixed {
+				if !strings.HasPrefix(section, "profile ") {
+					continue
+				}
+				section = strings.TrimPrefix(section, "profile ")
+			}
+			section = strings.TrimSpace(section)
+			if section != "" {
+				seen[section] = struct{}{}
+			}
+		}
+		return scanner.Err()
+	}
+
+	if err := parseINI(filepath.Join(home, ".aws", "config"), true); err != nil {
+		return nil, fmt.Errorf("reading ~/.aws/config: %w", err)
+	}
+	if err := parseINI(filepath.Join(home, ".aws", "credentials"), false); err != nil {
+		return nil, fmt.Errorf("reading ~/.aws/credentials: %w", err)
+	}
+
+	profiles := make([]string, 0, len(seen))
+	for p := range seen {
+		profiles = append(profiles, p)
+	}
+	sort.Strings(profiles)
+	return profiles, nil
 }
 
 func main() {
@@ -28,20 +84,24 @@ func main() {
 	flag.StringVar(&profileVal, "profile", "", "AWS profile name")
 	flag.StringVar(&profileVal, "p", "", "AWS profile name (shorthand)")
 	region := flag.String("region", "", "AWS region")
+	listProfiles := flag.Bool("list-profiles", false, "List available AWS profiles in config file")
 	flag.Parse()
 
-	if profileVal != "" {
-		allowed := false
-		for _, p := range allowedProfiles {
-			if p == profileVal {
-				allowed = true
-				break
-			}
-		}
-		if !allowed {
-			fmt.Fprintf(os.Stderr, "profile %q does not exist\n", profileVal)
-			os.Exit(1)
-		}
+	profiles, err := loadAWSProfiles()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "warning: could not load AWS profiles: %v\n", err)
+		profiles = []string{"default"}
+	}
+
+	if *listProfiles {
+		fmt.Println(strings.Join(profiles, "\n"))
+		os.Exit(0)
+	}
+
+	if profileVal != "" && !slices.Contains(profiles, profileVal) {
+		fmt.Fprintf(os.Stderr, "profile %q not found in ~/.aws/config or ~/.aws/credentials\n", profileVal)
+		fmt.Fprintf(os.Stderr, "available profiles: %s\n", strings.Join(profiles, ", "))
+		os.Exit(1)
 	}
 
 	ctx := context.Background()
