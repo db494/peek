@@ -1,0 +1,21 @@
+# Compiled binary
+/peek
+peek.exe
+
+# Build and test artifacts
+*.test
+*.out
+/dist/
+
+# Go workspace files (machine-local)
+go.work
+go.work.sum
+
+# Editor/IDE
+.idea/
+.vscode/
+*.swp
+*~
+
+# OS cruft
+.DS_Store
